@@ -1,14 +1,14 @@
 NARM: Nim-on-ARM
 =====================
 
-Just enough runtime and BSP support to enable easy use of [nim](nim-lang.org) on
+Just enough runtime and BSP support to enable easy use of [nim](http://nim-lang.org) on
 ARM Cortex MCUs
 
 ## Prerequisites
 1. GNU Make
 2. [gcc-arm-embedded](https://launchpad.net/gcc-arm-embedded)
-3. [Nim](nim-lang.org)
-4. [openocd](openocd.org)
+3. [Nim](http://nim-lang.org)
+4. [openocd](http://openocd.org)
 
 ## Creating a new project:
 1. Create (if necessary) board and CPU definitions (see existing examples for details).
