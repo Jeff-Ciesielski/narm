@@ -1,4 +1,9 @@
-*/.DS_Store
+*.DS_Store
 *.o
 *.d
 /app/*/nimcache/
+/app.default
+/*.bin
+/*.elf
+/*.map
+/libs.mk
