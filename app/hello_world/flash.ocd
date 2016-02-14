@@ -1,0 +1,3 @@
+program hello_world.elf verify
+reset run
+exit

@@ -1,0 +1,26 @@
+
+
+int dma_req_transmit()
+{
+    
+}
+
+int dma_req_receive()
+{
+    
+}
+
+void DMA1_Channel1_IRQHandler(void)
+{
+    
+}b
+
+void DMA1_Channel2_3_IRQHandler(void)
+{
+    
+}
+
+void DMA1_Channel4_5_6_7_IRQHandler(void)
+{
+    
+}
