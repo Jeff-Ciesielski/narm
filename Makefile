@@ -95,7 +95,6 @@ $(TARGET).bin: $(TARGET).elf
 
 nimcache:
 	@printf " Regenerating Nim cache\n"
-	$(Q)rm -rf $(APP_PATH)/nimcache
 	$(Q)nim c --compile_only -p=libs/nim_runtime -p=libs/rtos_nim $(APP_PATH)/main.nim
 
 $(TARGET).elf: nimcache libs.mk $(APP_O_FILES) $(LIB_O_FILES)
