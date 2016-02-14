@@ -120,6 +120,7 @@ clean:
 	$(LIB_D_FILES)              \
 	$(LIB_O_FILES)              \
 	$(TARGET).bin $(TARGET).elf \
+	$(TARGET).map               \
 	$(LIBS_ALL)                 \
 	libs.mk
 
