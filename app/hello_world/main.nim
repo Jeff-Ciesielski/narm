@@ -1,8 +1,5 @@
 import rtos
-import utils
-
-proc printf(formatstr: cstring) {.importc: "printf", varargs,
-                                  header: "<stdio.h>".}
+import stdio
 
 proc usart_init(usart_no: int, baudrate: uint32): void {.importc.}
 
@@ -24,6 +21,6 @@ proc setup_task(params: pointer): void =
   delete_task(nil)
 
 when isMainModule:
-  utils.enable_unbuffered_io() 
+  stdio.enable_unbuffered_io()
   discard rtos.create_task(setup_task, "Setup Task", 100, 8)
   rtos.start_scheduler()
