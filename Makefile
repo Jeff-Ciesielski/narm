@@ -44,9 +44,7 @@ NIM     := $(shell which nim)
 
 # Grab the nim base include path
 NIM_PATHS = $(shell nim dump 2>&1 | grep /lib)
-NIM_INCLUDES = $(prefix -I, $(NIM_PATHS))
-
-NIM_INCLUDES += -I/Users/jciesiel/Dropbox/workspace/Nim/lib
+NIM_INCLUDES = $(patsubst %, -I%, $(NIM_PATHS))
 
 LIBS = -lnosys
 
