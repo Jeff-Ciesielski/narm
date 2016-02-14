@@ -72,7 +72,7 @@ endif
 # This file is dynamically created based on the libraries in the libs/ folder
 -include libs.mk
 
-LIB_C_FILES += $(wildcard libs/rtos_nim/*.c)
+LIB_C_FILES += $(wildcard libs/rtos_nim/*.c) $(wildcard libs/nim_runtime/*.c)
 
 APP_O_FILES = $(APP_C_FILES:.c=.o) $(APP_S_FILES:.s=.o)
 LIB_O_FILES  = $(LIB_C_FILES:.c=.o) $(LIB_S_FILES:.s=.o)

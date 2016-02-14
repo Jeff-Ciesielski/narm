@@ -1,5 +1,7 @@
 #include <FreeRTOS.h>
 #include <task.h>
+#include <timers.h>
+#include <stdbool.h>
 
 struct stack_frame {
 	uint32_t psr;
@@ -33,7 +35,7 @@ void vApplicationStackOverflowHook(xTaskHandle pxTask, signed char *pcTaskName)
 	(void)pcTaskName;
 }
 
-void *task_create(void(task)(void *params), char *task_name,
+void *create_task(void(task)(void *params), char *task_name,
                   uint16_t stack_size, uint32_t priority)
 {
     void *task_handle;
@@ -55,7 +57,25 @@ void start_scheduler(void)
     vTaskStartScheduler();
 }
 
-void task_delete(void *task)
+void delete_task(void *task)
 {
     vTaskDelete(task);
 }
+
+void *create_soft_timer(char *timer_name, uint32_t tick_rate, bool auto_reload, void(timer_callback)(TimerHandle_t))
+{
+    return xTimerCreate(
+        timer_name,
+        tick_rate,
+        auto_reload,
+        NULL,		/* Unique ID */
+        timer_callback /* Callback */
+        );
+}
+
+bool start_soft_timer(void *timer_handle, uint32_t ticks_to_wait)
+{
+    return xTimerStart(timer_handle, ticks_to_wait);
+}
+
+
