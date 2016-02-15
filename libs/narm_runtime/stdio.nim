@@ -26,7 +26,6 @@ var
 const
   IONBF* = 2
 
-
 proc printf*(formatstr: cstring) {.importc: "printf", varargs,
                                   header: "<stdio.h>".}
 
@@ -37,7 +36,6 @@ proc printf*(formatstr: cstring) {.importc: "printf", varargs,
 # embedded hosts.  For more info, see the man page for setvbuf
 proc setvbuf(stream: File, buf: cstring, buftype: int, size: int32): int {.importc: "setvbuf", header:"<stdio.h>".}
 proc enable_unbuffered_io*(): void =
-  discard setvbuf(stdin, nil, IONBF, 0)
-  discard setvbuf(stdout, nil, IONBF, 0)
-  discard setvbuf(stderr, nil, IONBF, 0)
+  for stream in [stdin, stdout, stderr]:
+      discard setvbuf(stream, nil, IONBF, 0)
 
