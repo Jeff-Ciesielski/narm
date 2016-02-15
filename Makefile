@@ -49,8 +49,9 @@ NIM_INCLUDES = $(patsubst %, -I%, $(NIM_PATHS))
 LIBS = -lnosys
 
 INCLUDES += $(CPU_INCLUDES) $(BOARD_INCLUDES) $(LIB_INCLUDES) $(APP_INCLUDES) $(NIM_INCLUDES)
-CFLAGS    = $(INCLUDES) $(CPU_DEFINES) $(BOARD_DEFINES) $(APP_DEFINES) $(CPU_FLAGS) \
-	-Os -Wall -Wno-pragmas -fno-common -c -mthumb -ffunction-sections -fdata-sections -flto \
+CFLAGS = $(INCLUDES) $(CPU_DEFINES) $(BOARD_DEFINES) $(APP_DEFINES)                      \
+	$(CPU_FLAGS) -Os -Wall -Wno-pragmas -Wno-unused-but-set-variable -fno-common     \
+	-c -mthumb -ffunction-sections -fdata-sections -flto                             \
 	-mcpu=$(CPU_TYPE) -MD -std=gnu99
 
 ASFLAGS   = -mcpu=$(CPU_TYPE) $(FPU) -g -Wa,--warn
