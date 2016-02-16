@@ -13,12 +13,12 @@ proc init*(): void {.cdecl, importc:"shell_init", header: "shell.h".}
 proc shell_register_command(command: ptr shell_cmd): cint {.cdecl, importc: "shell_register_command", header: "shell.h".}
 
 template register_command*(cmd, help_str: cstring, cb: shell_callback): int =
-  proc cmd_help(): void {.cdecl.} =
+  proc `cb help`(): void {.cdecl.} =
     printf("%s - %s\n", cmd, help_str)
-  var x = shell_cmd(command: cmd, action: cb, help: cmd_help)
+  var x = shell_cmd(command: cmd, action: cb, help: `cb help`)
 
   shell_register_command(x.addr)
 
-template shell_handler*(cmd, actions: untyped): untyped =
-  proc cmd(args: cint, argv: cstringArray): void {.cdecl.} =
+template shell_handler*(cmd, actions: untyped) {.dirty.} =
+  proc cmd(argc: cint, argv: cstringArray): void {.cdecl.} =
     actions
