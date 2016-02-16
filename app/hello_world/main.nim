@@ -14,11 +14,11 @@ shell_handler(print_ticks):
 
 shell_handler(arg_example):
   for x in 1..argc-1:
-    if argv[x] ~= "foo":
+    if argv[x] == "foo":
       printf("handler for 'foo'\n")
-    elif argv[x] ~= "bar":
+    elif argv[x] == "bar":
       printf("handler for 'bar'\n")
-    elif argv[x] ~= "baz":
+    elif argv[x] == "baz":
       printf("handler for 'baz'\n")
     else:
       printf("Unhandled arg: %d - %s", x, argv[x])
