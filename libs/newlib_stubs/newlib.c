@@ -17,8 +17,13 @@
 #include <util.h>
 
 #include <usart.h>
+#include <board.h>
 
-#define DEBUG_USART USART_2
+#ifndef BOARD_DEBUG_USART
+#warning "No board debug usart defined"
+#else
+  #define DEBUG_USART BOARD_DEBUG_USART
+#endif
 
 #undef errno
 extern int errno;
@@ -67,7 +72,7 @@ int _fstat(int file, struct stat *st)
 
 __attribute__((used))
 int _getpid()
-{ 
+{
 	return 1;
 }
 
@@ -146,13 +151,18 @@ caddr_t _sbrk(int incr)
 
 int _read(int file, char *ptr, int len)
 {
-	int ret;
+	int ret = 0;
 	/* TODO: remove this when we build in support */
 	(void)len;
 	switch (file)
 	{
 		case STDIN_FILENO:
+#ifdef DEBUG_USART
 			ret = usart_read(DEBUG_USART, ptr, len, portMAX_DELAY);
+#else
+                        /* Perhaps support USB CDC? */
+                        ret = len;
+#endif
 			break;
 		default:
 			errno = EBADF;
@@ -192,7 +202,7 @@ int _wait(int *status)
 int _write(int file, char *ptr, int len)
 {
 	int n;
-	
+
 	switch (file)
 	{
 		case STDOUT_FILENO: /*stdout*/
@@ -207,7 +217,11 @@ int _write(int file, char *ptr, int len)
 						buf[j++] = '\r';
 					buf[j++] = ptr[i++];
 				}
+#ifdef DEBUG_USART
 				usart_write(DEBUG_USART, buf, j);
+#else
+                                /* Perhaps support USB CDC? */
+#endif
 			}
 			break;
 		default:

@@ -3,6 +3,8 @@ include cpu/stm32f0xx/config.mk
 CPU = stm32f072
 CPU_LINK_MEM = f072_mem.ld
 
+BOARD_INCLUDES += -I$(BOARD_PATH)
+
 #this board uses the internal 8MHZ osc and has an stm32f072 onboard
 BOARD_DEFINES += -DSTM32F072
 
