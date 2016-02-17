@@ -1,4 +1,5 @@
 include cpu/stm32f0xx/config.mk
+
 CPU = stm32f072
 CPU_LINK_MEM = f072_mem.ld
 

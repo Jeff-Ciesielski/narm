@@ -13,12 +13,24 @@ else
   $(shell echo "$(APP)" > app.default)
 endif
 
+ifeq ($(BOARD),)
+  ifeq ($(wildcard board.default),)
+    $(error BOARD is not defined.  Pass it in as BOARD= or create a config.mk file)
+  else
+    BOARD = $(shell cat board.default)
+  endif
+else
+  $(shell echo "$(BOARD)" > board.default)
+endif
+
 APP_PATH     := app/$(APP)
 LIB_PATH     := libs
+BOARD_PATH   := board/$(BOARD)
 APP_INCLUDES += -I$(APP_PATH)
 
 # load the board specific configuration
 include $(APP_PATH)/config.mk
+include $(BOARD_PATH)/config.mk
 
 ifeq ($(CPU_TYPE),)
   $(error CPU_TYPE is not defined, please ensure it is defined in your cpu config.mk)
@@ -132,7 +144,7 @@ debug: $(TARGET).elf
 	$(OPENOCD) -f $(APP_PATH)/debug.ocd
 
 flash: $(TARGET).elf
-	$(OPENOCD) -f $(APP_PATH)/debug.ocd -f $(APP_PATH)/flash.ocd
+	$(OPENOCD) -f $(BOARD_PATH)/board.ocd -c "program $(TARGET).elf verify" -c "reset run" -c "exit"
 
 ddd: $(TARGET).elf
 	$(DDD) --eval-command="target remote localhost:3333" --debugger $(GDB) $(TARGET).elf

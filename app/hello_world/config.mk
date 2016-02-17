@@ -1,9 +1,6 @@
 # The name of our project (and the associated artifacts created)
 TARGET = hello_world
 
-# board specific config file
-include board/stm32f0_discovery/config.mk
-
 # Set our linker script
 LINK_MEM = linker.ld
 APP_START_ADDRESS = 0x08000000
@@ -52,8 +49,3 @@ AS1117=1
 FREERTOS_HEAP=heap_1
 
 APP_DEFINES += -DUSART1_ENABLE -DUSART2_ENABLE -DUSE_I2C2 -DUSE_I2C1
-
-# CPU is generally defined by the Board's config.mk file
-ifeq ($(CPU),)
-  $(error CPU is not defined, please define it in your CPU specific config.mk file)
-endif
