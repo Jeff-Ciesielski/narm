@@ -6,7 +6,13 @@ import cstrmatch
 
 var tick_count: int
 
-proc tick_callback(exp_timer: timer_handle): void =
+rtosApplicationTickHook:
+  return
+
+rtosStackOverflowHook:
+  printf("Stack overflowed")
+
+timerHandler(tick_callback):
   tick_count += 1
 
 shell_handler(print_ticks):
@@ -23,8 +29,7 @@ shell_handler(arg_example):
     else:
       printf("Unhandled arg: %d - %s", x, argv[x])
 
-proc setup_task(params: pointer): void =
-
+rtosTask(setup_task):
   # Init the debug usart
   usart2.init(115200)
   printf("Hello world\n")
@@ -33,13 +38,13 @@ proc setup_task(params: pointer): void =
   discard shell.register_command("ticks", "print number of elapsed ticks", print_ticks)
   discard shell.register_command("arg", "arg example [foo, bar, baz]", arg_example)
 
-  var tick_timer = rtos.create_soft_timer("Tick", 1000, true, tick_callback)
+  var tick_timer = rtos.createSoftTimer("Tick", 1000, true, nil, tick_callback)
 
-  discard rtos.start_soft_timer(tick_timer, 0)
+  discard rtos.startSoftTimer(tick_timer, 0)
 
-  rtos.delete_task(nil)
+  rtos.deleteTask(nil)
 
 when isMainModule:
   stdio.enable_unbuffered_io()
-  discard rtos.create_task(setup_task, "Setup Task", 100, 8)
-  rtos.start_scheduler()
+  discard rtos.createTask(setup_task, "Setup Task", 100, nil, 8)
+  rtos.startScheduler()
