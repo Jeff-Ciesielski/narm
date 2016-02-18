@@ -1,5 +1,5 @@
 
-# Misc utilities to enable simple integration of some low level stdlib
+# Misc utilities to enable simple integration of some low level stdio
 # stuff that doesn't map nicely to nim at the moment.
 
 # NOTE: This is (unfortunately) going to be a dumping ground for the
@@ -7,7 +7,7 @@
 # the future
 
 
-# These are currently not supported by the 'standalone' implementation
+# These are currently not supported by the 'os:standalone' implementation
 # of Nim.  That said, we need them anyway, so pilfer them until we can
 # get this taken care of
 type
@@ -35,7 +35,7 @@ proc printf*(formatstr: cstring) {.importc: "printf", varargs,
 # requires memory allocations that might not be suitable for deeply
 # embedded hosts.  For more info, see the man page for setvbuf
 proc setvbuf(stream: File, buf: cstring, buftype: int, size: int32): int {.importc: "setvbuf", header:"<stdio.h>".}
-proc enable_unbuffered_io*(): void =
+proc enableUnbufferedIO*(): void =
   for stream in [stdin, stdout, stderr]:
       discard setvbuf(stream, nil, IONBF, 0)
 

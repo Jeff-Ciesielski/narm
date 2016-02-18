@@ -34,7 +34,7 @@ shellHandler(arg_example):
 rtosTask(setup_task):
   # Init the debug usart
   usart2.init(115200)
-  printf("Hello world\n")
+  printf("\nHello world\n")
 
   shell.init()
   discard shell.registerCommand("ticks", "print number of elapsed ticks", print_ticks)
@@ -47,6 +47,6 @@ rtosTask(setup_task):
   rtos.deleteTask(nil)
 
 when isMainModule:
-  stdio.enable_unbuffered_io()
+  stdio.enableUnbufferedIO()
   discard rtos.createTask(setup_task, "Setup Task", 100, nil, 8)
   rtos.startScheduler()
