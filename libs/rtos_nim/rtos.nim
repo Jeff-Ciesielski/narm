@@ -46,7 +46,7 @@ template rtosTask*(name, actions: untyped): void =
     actions
 
 proc createTask*(t: Task, taskName: cstring, stackSize: uint16, parameters: pointer = nil, priority: uint32): TaskHandle  =
-  var retVal = xTaskCreate(t, taskname, stackSize, parameters, priority, result)
+  var retVal = xTaskCreate(t, taskname, stackSize, parameters, priority, result.addr)
 
   assert(retVal != 0, "Unable to create task")
 
