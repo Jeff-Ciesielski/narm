@@ -30,6 +30,10 @@ proc xTimerCreate(
     timerId: pointer,
     callback: TimerCallback): TimerHandle {.importc: "xTimerCreate", header:"FreeRTOSWrap.h", cdecl.}
 
+proc vSemaphoreCreateBinary(smphr: SemaphoreHandle): void {.importc: "vSemaphoreCreateBinary", header:"FreeRTOSWrap.h", cdecl.}
+proc xSemaphoreGive(smphr: SemaphoreHandle): bool {.importc: "vSemaphoreCreateBinary", header:"FreeRTOSWrap.h", cdecl.}
+proc xSemaphoreTake(smphr: SemaphoreHandle, blockTime: int): bool {.importc: "vSemaphoreCreateBinary", header:"FreeRTOSWrap.h", cdecl.}
+
 proc xTimerStart(timer: TimerHandle, ticksToWayt: uint32): bool {.importc: "xTimerStart", header:"FreeRTOSWrap.h", cdecl.}
 
 # OS Hooks
@@ -73,3 +77,15 @@ proc createSoftTimer*(timerName: cstring, periodInTicks: uint32, autoReload: boo
 
 proc startSoftTimer*(timer: TimerHandle, ticksToWait: uint32): bool =
   result = xTimerStart(timer, ticksToWait)
+
+# Lock management
+proc createBinarySemaphore*(): SemaphoreHandle =
+  vSemaphoreCreateBinary(result.addr)
+
+  assert(result != nil)
+
+proc give*(smphr: SemaphoreHandle): bool =
+  result = xSemaphoreGive(smphr)
+
+proc take*(smphr: SemaphoreHandle, blockTime: int = MaxDelay): bool =
+  result = xSemaphoreTake(smphr, blockTime)
