@@ -4,8 +4,10 @@ import usart
 import shell
 import cstrmatch
 
-var tick_count: int
+var tickCount: int
 
+# Application and stack overflow hooks are implemented as templates to
+# free the user from the underlying pragma requirements
 rtosApplicationTickHook:
   return
 
@@ -13,12 +15,12 @@ rtosStackOverflowHook:
   printf("Stack overflowed")
 
 timerHandler(tick_callback):
-  tick_count += 1
+  tickCount += 1
 
-shell_handler(print_ticks):
-  printf("Tick Count: %d", tick_count)
+shellHandler(print_ticks):
+  printf("Tick Count: %d", tickCount)
 
-shell_handler(arg_example):
+shellHandler(arg_example):
   for x in 1..argc-1:
     if argv[x] == "foo":
       printf("handler for 'foo'\n")
@@ -35,8 +37,8 @@ rtosTask(setup_task):
   printf("Hello world\n")
 
   shell.init()
-  discard shell.register_command("ticks", "print number of elapsed ticks", print_ticks)
-  discard shell.register_command("arg", "arg example [foo, bar, baz]", arg_example)
+  discard shell.registerCommand("ticks", "print number of elapsed ticks", print_ticks)
+  discard shell.registerCommand("arg", "arg example [foo, bar, baz]", arg_example)
 
   var tick_timer = rtos.createSoftTimer("Tick", 1000, true, nil, tick_callback)
 
