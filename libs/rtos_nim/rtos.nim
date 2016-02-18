@@ -1,13 +1,18 @@
-# Task related types
-type Task* = (proc(params: pointer):void {.cdecl.})
-type TaskHandle* = pointer
+var MaxDelay* {.importc: "portMAX_DELAY", header: "FreeRTOSWrap.h".}: cint
 
-# Timer related types
-type TimerHandle* = pointer
-type TimerCallback* = (proc(x: TimerHandle):void {.cdecl.})
+type
+  # Task related types
+  Task* = (proc(params: pointer):void {.cdecl.})
+  TaskHandle* = pointer
+
+  # Timer related types
+  TimerHandle* = pointer
+  TimerCallback* = (proc(x: TimerHandle):void {.cdecl.})
+
+  # Lock related types
+  SemaphoreHandle = pointer
 
 # FreeRTOS Private wrappers
-
 proc vTaskStartScheduler(): void {.importc: "vTaskStartScheduler",header: "FreeRTOSWrap.h", cdecl.}
 proc vTaskDelete(t: TaskHandle): void {.importc: "vTaskDelete", header:"FreeRTOSWrap.h", cdecl.}
 proc xTaskCreate(
