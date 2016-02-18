@@ -7,3 +7,4 @@
 /*.elf
 /*.map
 /libs.mk
+/board.default
