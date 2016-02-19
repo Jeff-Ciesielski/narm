@@ -57,9 +57,7 @@ template rtosTask*(name, actions: untyped): void =
     actions
 
 proc createTask*(t: Task, taskName: cstring, stackSize: uint16, parameters: pointer = nil, priority: uint32): TaskHandle  =
-  var retVal = xTaskCreate(t, taskname, stackSize, parameters, priority, result.addr)
-
-  assertFatal(retVal == 0, "Unable to create task")
+  discard xTaskCreate(t, taskname, stackSize, parameters, priority, result.addr)
 
 proc deleteTask*(t: TaskHandle): void =
   vTaskDelete(t)
@@ -75,16 +73,12 @@ template timerHandler*(name, actions: untyped): void =
 proc createSoftTimer*(timerName: cstring, periodInTicks: uint32, autoReload: bool, timerId: pointer = nil, handler: TimerCallback): TimerHandle =
   result = xTimerCreate(timerName, periodInTicks, autoReload.uint32, timerId, handler)
 
-  assertFatal(result == nil, "Unable to create timer")
-
 proc startSoftTimer*(timer: TimerHandle, ticksToWait: uint32): bool =
   result = xTimerStart(timer, ticksToWait)
 
 # Lock management
 proc createBinarySemaphore*(): SemaphoreHandle =
   vSemaphoreCreateBinary(result.addr)
-
-  assertFatal(result == nil, "Unable to create semaphore")
 
 proc give*(smphr: SemaphoreHandle): bool =
   result = xSemaphoreGive(smphr)
