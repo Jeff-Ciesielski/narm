@@ -3,6 +3,7 @@ import stdio
 import usart
 import shell
 import cstrmatch
+import assertions
 
 var tickCount: int
 
@@ -12,7 +13,7 @@ rtosApplicationTickHook:
   return
 
 rtosStackOverflowHook:
-  printf("Stack overflowed")
+  errFatal("Stack overflowed\n")
 
 timerHandler(tick_callback):
   tickCount += 1

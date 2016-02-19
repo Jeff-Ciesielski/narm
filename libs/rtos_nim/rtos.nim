@@ -1,3 +1,5 @@
+import assertions
+
 var MaxDelay* {.importc: "portMAX_DELAY", header: "FreeRTOSWrap.h".}: cint
 
 type
@@ -57,7 +59,7 @@ template rtosTask*(name, actions: untyped): void =
 proc createTask*(t: Task, taskName: cstring, stackSize: uint16, parameters: pointer = nil, priority: uint32): TaskHandle  =
   var retVal = xTaskCreate(t, taskname, stackSize, parameters, priority, result.addr)
 
-  assert(retVal != 0, "Unable to create task")
+  assertFatal(retVal == 0, "Unable to create task")
 
 proc deleteTask*(t: TaskHandle): void =
   vTaskDelete(t)
@@ -73,7 +75,7 @@ template timerHandler*(name, actions: untyped): void =
 proc createSoftTimer*(timerName: cstring, periodInTicks: uint32, autoReload: bool, timerId: pointer = nil, handler: TimerCallback): TimerHandle =
   result = xTimerCreate(timerName, periodInTicks, autoReload.uint32, timerId, handler)
 
-  assert(result != nil, "Unable to create timer")
+  assertFatal(result == nil, "Unable to create timer")
 
 proc startSoftTimer*(timer: TimerHandle, ticksToWait: uint32): bool =
   result = xTimerStart(timer, ticksToWait)
@@ -82,7 +84,7 @@ proc startSoftTimer*(timer: TimerHandle, ticksToWait: uint32): bool =
 proc createBinarySemaphore*(): SemaphoreHandle =
   vSemaphoreCreateBinary(result.addr)
 
-  assert(result != nil)
+  assertFatal(result == nil, "Unable to create semaphore")
 
 proc give*(smphr: SemaphoreHandle): bool =
   result = xSemaphoreGive(smphr)
