@@ -16,7 +16,7 @@ proc cshellRegisterCommand(command: ptr ShellCommand): cint {.cdecl, importc: "s
 template registerCommand*(cmd, help_str: cstring, cb: ShellCallback): int =
   proc `cb help`(): void {.cdecl.} =
     printf("%s - %s\n", cmd, help_str)
-  var x = ShellCommand(command: cmd, action: cb, help: `cb help`)
+  var x {.global.} = ShellCommand(command: cmd, action: cb, help: `cb help`)
 
   cshellRegisterCommand(x.addr)
 
