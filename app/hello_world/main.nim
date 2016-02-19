@@ -13,7 +13,7 @@ rtosApplicationTickHook:
   return
 
 rtosStackOverflowHook:
-  errFatal("Stack overflowed\n")
+  errFatal("Stack overflowed")
 
 timerHandler(tick_callback):
   tickCount += 1
@@ -41,7 +41,8 @@ rtosTask(setup_task):
   discard shell.registerCommand("ticks", "print number of elapsed ticks", print_ticks)
   discard shell.registerCommand("arg", "arg example [foo, bar, baz]", arg_example)
 
-  var tick_timer = rtos.createSoftTimer("Tick", 1000, true, nil, tick_callback)
+  var tickTimer = rtos.createSoftTimer("Tick", 1000, true, nil, tick_callback)
+  assertFatal(tickTimer == nil)
 
   discard rtos.startSoftTimer(tick_timer, 0)
 
@@ -49,5 +50,6 @@ rtosTask(setup_task):
 
 when isMainModule:
   stdio.enableUnbufferedIO()
-  discard rtos.createTask(setup_task, "Setup Task", 100, nil, 8)
+  discard rtos.createTask(setup_task, "Setup Task", 150, nil, 8)
+
   rtos.startScheduler()
