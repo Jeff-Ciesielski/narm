@@ -149,28 +149,6 @@ caddr_t _sbrk(int incr)
 
 }
 
-int _read(int file, char *ptr, int len)
-{
-	int ret = 0;
-	/* TODO: remove this when we build in support */
-	(void)len;
-	switch (file)
-	{
-		case STDIN_FILENO:
-#ifdef DEBUG_USART
-			ret = usart_read(DEBUG_USART, ptr, len, portMAX_DELAY);
-#else
-                        /* Perhaps support USB CDC? */
-                        ret = len;
-#endif
-			break;
-		default:
-			errno = EBADF;
-			ret = -1;
-	}
-	return ret;
-}
-
 int _stat(const char *filepath, struct stat *st)
 {
 	(void)filepath;
@@ -197,36 +175,4 @@ int _wait(int *status)
 	(void)status;
 	errno = ECHILD;
 	return -1;
-}
-
-int _write(int file, char *ptr, int len)
-{
-	int n;
-
-	switch (file)
-	{
-		case STDOUT_FILENO: /*stdout*/
-		case STDERR_FILENO: /* stderr */
-			n = len;
-			char buf[WRITE_BUF_SIZE];
-			int i = 0;
-			while (i < len) {
-				int j = 0;
-				while ((j < ARRAY_SIZE(buf) - 1) && (j < len)) {
-					if (ptr[i] == '\n')
-						buf[j++] = '\r';
-					buf[j++] = ptr[i++];
-				}
-#ifdef DEBUG_USART
-				usart_write(DEBUG_USART, buf, j);
-#else
-                                /* Perhaps support USB CDC? */
-#endif
-			}
-			break;
-		default:
-			errno = EBADF;
-			return -1;
-	}
-	return n;
 }
