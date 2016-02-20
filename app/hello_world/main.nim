@@ -46,7 +46,7 @@ rtosTask(setup_task):
 
   discard rtos.startSoftTimer(tick_timer, 0)
 
-  rtos.deleteTask(nil)
+  currentTask.deleteTask()
 
 when isMainModule:
   stdio.enableUnbufferedIO()

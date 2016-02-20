@@ -1,5 +1,3 @@
-import assertions
-
 var MaxDelay* {.importc: "portMAX_DELAY", header: "FreeRTOSWrap.h".}: uint32
 
 type
@@ -53,6 +51,7 @@ proc xSemaphoreGive(smphr: SemaphoreHandle): bool {.importc: "vSemaphoreCreateBi
 proc xSemaphoreTake(smphr: SemaphoreHandle, blockTime: uint32): bool {.importc: "vSemaphoreCreateBinary", header:"FreeRTOSWrap.h", cdecl.}
 
 proc xTimerStart(timer: TimerHandle, ticksToWayt: uint32): bool {.importc: "xTimerStart", header:"FreeRTOSWrap.h", cdecl.}
+proc getCurrentTask(): TaskHandle {.importc:"xTaskGetCurrentTaskHandle", header:"FreeRTOSWrap.h", cdecl.}
 
 # OS Hooks
 # TODO: Add some sort of check that generates a better error if these
@@ -66,6 +65,9 @@ template rtosApplicationTickHook*(actions: untyped): void =
     actions
 
 # Task management functions
+
+template currentTask*: TaskHandle =
+  getCurrentTask()
 
 template rtosTask*(name, actions: untyped): void =
   proc `name`(params: pointer): void {.cdecl.} =
