@@ -30,7 +30,7 @@ proc xTaskCreate(
     stackSize: uint16,
     parameters: pointer,
     priority: uint32,
-    created_task: TaskHandle): uint32 {.importc: "xTaskCreate", header: "FreeRTOSWrap.h", cdecl.}
+    created_task: ptr TaskHandle): bool {.importc: "xTaskCreate", header: "FreeRTOSWrap.h", cdecl.}
 proc xTaskNotify(
     t: TaskHandle,
     value: uint32,
@@ -71,8 +71,11 @@ template rtosTask*(name, actions: untyped): void =
   proc `name`(params: pointer): void {.cdecl.} =
     actions
 
-proc createTask*(t: Task, taskName: cstring, stackSize: uint16, parameters: pointer = nil, priority: uint32): TaskHandle  =
-  discard xTaskCreate(t, taskname, stackSize, parameters, priority, result.addr)
+proc createTask*(t: Task, taskName: cstring, stackSize: uint16, parameters: pointer = nil, priority: uint32): (bool, TaskHandle)  =
+  var tHandle: TaskHandle
+  var retVal = xTaskCreate(t, taskname, stackSize, parameters, priority, tHandle.addr)
+
+  return (retVal, tHandle)
 
 proc deleteTask*(t: TaskHandle): void =
   vTaskDelete(t)
