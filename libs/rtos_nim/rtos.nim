@@ -50,7 +50,6 @@ proc vSemaphoreCreateBinary(smphr: SemaphoreHandle): void {.importc: "vSemaphore
 proc xSemaphoreGive(smphr: SemaphoreHandle): bool {.importc: "vSemaphoreCreateBinary", header:"FreeRTOSWrap.h", cdecl.}
 proc xSemaphoreTake(smphr: SemaphoreHandle, blockTime: uint32): bool {.importc: "vSemaphoreCreateBinary", header:"FreeRTOSWrap.h", cdecl.}
 
-proc xTimerStart(timer: TimerHandle, ticksToWayt: uint32): bool {.importc: "xTimerStart", header:"FreeRTOSWrap.h", cdecl.}
 proc getCurrentTask(): TaskHandle {.importc:"xTaskGetCurrentTaskHandle", header:"FreeRTOSWrap.h", cdecl.}
 
 # OS Hooks
@@ -102,8 +101,7 @@ template timerHandler*(name, actions: untyped): void =
 proc createSoftTimer*(timerName: cstring, periodInTicks: uint32, autoReload: bool, timerId: pointer = nil, handler: TimerCallback): TimerHandle =
   result = xTimerCreate(timerName, periodInTicks, autoReload.uint32, timerId, handler)
 
-proc startSoftTimer*(timer: TimerHandle, ticksToWait: uint32): bool =
-  result = xTimerStart(timer, ticksToWait)
+proc startSoftTimer*(timer: TimerHandle, ticksToWait: uint32): bool {.importc: "xTimerStart", header: "FreeRTOSWrap.h", cdecl.}
 
 # Lock management
 proc createBinarySemaphore*(): SemaphoreHandle =
