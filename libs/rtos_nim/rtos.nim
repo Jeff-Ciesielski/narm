@@ -20,8 +20,6 @@ type
   SemaphoreHandle = pointer
 
 # FreeRTOS Private wrappers
-proc vTaskStartScheduler(): void {.importc: "vTaskStartScheduler",header: "FreeRTOSWrap.h", cdecl.}
-proc vTaskDelete(t: TaskHandle): void {.importc: "vTaskDelete", header:"FreeRTOSWrap.h", cdecl.}
 proc xTaskCreate(
     t: Task,
     taskName: cstring,
@@ -38,13 +36,6 @@ proc xTaskNotifyWait(
     bitsClearedOnExit: uint32,
     notificationAction: ptr uint32,
     ticksToWait: uint32): bool {.importc: "xTaskNotifyWait", header:"FreeRTOSWrap.h", cdecl.}
-
-proc xTimerCreate(
-    timerName: cstring,
-    periodInTicks: uint32,
-    autoReload: uint32,
-    timerId: pointer,
-    callback: TimerCallback): TimerHandle {.importc: "xTimerCreate", header:"FreeRTOSWrap.h", cdecl.}
 
 proc vSemaphoreCreateBinary(smphr: SemaphoreHandle): void {.importc: "vSemaphoreCreateBinary", header:"FreeRTOSWrap.h", cdecl.}
 proc getCurrentTask(): TaskHandle {.importc:"xTaskGetCurrentTaskHandle", header:"FreeRTOSWrap.h", cdecl.}
@@ -75,11 +66,8 @@ proc createTask*(t: Task, taskName: cstring, stackSize: uint16, parameters: poin
 
   return (retVal, tHandle)
 
-proc deleteTask*(t: TaskHandle): void =
-  vTaskDelete(t)
-
-template startScheduler*(): void  =
-  vTaskStartScheduler()
+proc deleteTask*(t: TaskHandle): void {.importc: "vTaskDelete", header:"FreeRTOSWrap.h", cdecl.}
+proc startScheduler*(): void {.importc: "vTaskStartScheduler",header: "FreeRTOSWrap.h", cdecl.}
 
 proc notify*(t: TaskHandle, value: uint32, action: NotificationAction): bool =
   result = xTaskNotify(t, value, action)
@@ -95,8 +83,12 @@ template timerHandler*(name, actions: untyped): void =
   proc `name`(et: TimerHandle): void {.cdecl.}=
     actions
 
-proc createSoftTimer*(timerName: cstring, periodInTicks: uint32, autoReload: bool, timerId: pointer = nil, handler: TimerCallback): TimerHandle =
-  result = xTimerCreate(timerName, periodInTicks, autoReload.uint32, timerId, handler)
+proc createSoftTimer*(
+    timerName: cstring,
+    periodInTicks: uint32,
+    autoReload: bool,
+    timerId: pointer = nil,
+    handler: TimerCallback): TimerHandle {.importc: "xTimerCreate", header:"FreeRTOSWrap.h", cdecl.}
 
 proc startSoftTimer*(timer: TimerHandle, ticksToWait: uint32): bool {.importc: "xTimerStart", header: "FreeRTOSWrap.h", cdecl.}
 
