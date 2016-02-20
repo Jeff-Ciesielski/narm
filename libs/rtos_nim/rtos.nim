@@ -47,9 +47,6 @@ proc xTimerCreate(
     callback: TimerCallback): TimerHandle {.importc: "xTimerCreate", header:"FreeRTOSWrap.h", cdecl.}
 
 proc vSemaphoreCreateBinary(smphr: SemaphoreHandle): void {.importc: "vSemaphoreCreateBinary", header:"FreeRTOSWrap.h", cdecl.}
-proc xSemaphoreGive(smphr: SemaphoreHandle): bool {.importc: "vSemaphoreCreateBinary", header:"FreeRTOSWrap.h", cdecl.}
-proc xSemaphoreTake(smphr: SemaphoreHandle, blockTime: uint32): bool {.importc: "vSemaphoreCreateBinary", header:"FreeRTOSWrap.h", cdecl.}
-
 proc getCurrentTask(): TaskHandle {.importc:"xTaskGetCurrentTaskHandle", header:"FreeRTOSWrap.h", cdecl.}
 
 # OS Hooks
@@ -107,8 +104,5 @@ proc startSoftTimer*(timer: TimerHandle, ticksToWait: uint32): bool {.importc: "
 proc createBinarySemaphore*(): SemaphoreHandle =
   vSemaphoreCreateBinary(result.addr)
 
-proc give*(smphr: SemaphoreHandle): bool =
-  result = xSemaphoreGive(smphr)
-
-proc take*(smphr: SemaphoreHandle, blockTime: uint32 = MaxDelay): bool =
-  result = xSemaphoreTake(smphr, blockTime)
+proc give*(smphr: SemaphoreHandle): bool {.importc:"xSemaphoreGive", header:"FreeRTOSWrap.h", cdecl.}
+proc take*(smphr: SemaphoreHandle, blockTime: uint32 = MaxDelay): bool {.importc: "xSemaphoreTake", header: "FreeRTOSWrap.h", cdecl}
