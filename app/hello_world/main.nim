@@ -15,13 +15,13 @@ rtosApplicationTickHook:
 rtosStackOverflowHook:
   errFatal("Stack overflowed")
 
-timerHandler(tick_callback):
+timerHandler(tickCallback):
   tickCount += 1
 
-shellHandler(print_ticks):
+shellHandler(printTicks):
   printf("Tick Count: %d", tickCount)
 
-shellHandler(arg_example):
+shellHandler(argExample):
   for x in 1..argc-1:
     if argv[x] == "foo":
       printf("handler for 'foo'\n")
@@ -32,16 +32,16 @@ shellHandler(arg_example):
     else:
       printf("Unhandled arg: %d - %s", x, argv[x])
 
-rtosTask(setup_task):
+rtosTask(setupTask):
   # Init the debug usart
   usart2.init(115200)
   printf("\nHello world\n")
 
   shell.init()
-  discard shell.registerCommand("ticks", "print number of elapsed ticks", print_ticks)
-  discard shell.registerCommand("arg", "arg example [foo, bar, baz]", arg_example)
+  discard shell.registerCommand("ticks", "print number of elapsed ticks", printTicks)
+  discard shell.registerCommand("arg", "arg example [foo, bar, baz]", argExample)
 
-  var tickTimer = rtos.createSoftTimer("Tick", 1000, true, nil, tick_callback)
+  var tickTimer = rtos.createSoftTimer("Tick", 1000, true, nil, tickCallback)
   assertFatal(tickTimer == nil)
 
   discard rtos.startSoftTimer(tick_timer, 0)
@@ -50,6 +50,6 @@ rtosTask(setup_task):
 
 when isMainModule:
   stdio.enableUnbufferedIO()
-  discard rtos.createTask(setup_task, "Setup Task", 150, nil, 8)
+  discard rtos.createTask(setupTask, "Setup Task", 150, nil, 8)
 
   rtos.startScheduler()
