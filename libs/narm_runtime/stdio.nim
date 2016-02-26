@@ -28,6 +28,10 @@ const
 
 proc printf*(formatstr: cstring) {.importc: "printf", varargs,
                                   header: "<stdio.h>".}
+proc getchar*(): int {.importc: "getchar",
+                      header: "<stdio.h>".}
+proc putchar*(c: char): int {.importc: "putchar",
+                                 header: "<stdio.h>".}
 
 # Enabling unbuffered IO will shoot every generated character directly
 # to the _write method (typically defined in newlib.c).  Typically

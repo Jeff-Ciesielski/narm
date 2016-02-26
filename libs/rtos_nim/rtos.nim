@@ -17,7 +17,7 @@ type
   TimerCallback* = (proc(x: TimerHandle):void {.cdecl.})
 
   # Lock related types
-  SemaphoreHandle = pointer
+  SemaphoreHandle* = pointer
 
 # FreeRTOS Private wrappers
 proc xTaskCreate(
@@ -94,7 +94,7 @@ proc startSoftTimer*(timer: TimerHandle, ticksToWait: uint32): bool {.importc: "
 
 # Lock management
 proc createBinarySemaphore*(): SemaphoreHandle =
-  vSemaphoreCreateBinary(result.addr)
+  vSemaphoreCreateBinary(result)
 
 proc give*(smphr: SemaphoreHandle): bool {.importc:"xSemaphoreGive", header:"FreeRTOSWrap.h", cdecl.}
 proc take*(smphr: SemaphoreHandle, blockTime: uint32 = MaxDelay): bool {.importc: "xSemaphoreTake", header: "FreeRTOSWrap.h", cdecl}

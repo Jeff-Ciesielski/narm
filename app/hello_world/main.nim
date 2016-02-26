@@ -23,11 +23,11 @@ shellHandler(printTicks):
 
 shellHandler(argExample):
   for x in 1..argc-1:
-    if argv[x] == "foo":
+    if argv[x] ~= "foo":
       printf("handler for 'foo'\n")
-    elif argv[x] == "bar":
+    elif argv[x] ~= "bar":
       printf("handler for 'bar'\n")
-    elif argv[x] == "baz":
+    elif argv[x] ~= "baz":
       printf("handler for 'baz'\n")
     else:
       printf("Unhandled arg: %d - %s", x, argv[x])
@@ -38,8 +38,8 @@ rtosTask(setupTask):
   printf("\nHello world\n")
 
   shell.init()
-  discard shell.registerCommand("ticks", "print number of elapsed ticks", printTicks)
-  discard shell.registerCommand("arg", "arg example [foo, bar, baz]", argExample)
+  shell.registerCommand("ticks", "print number of elapsed ticks", printTicks)
+  shell.registerCommand("arg", "arg example [foo, bar, baz]", argExample)
 
   var tickTimer = rtos.createSoftTimer("Tick", 1000, true, nil, tickCallback)
   assertFatal(tickTimer == nil)

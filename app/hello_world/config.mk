@@ -26,9 +26,6 @@ APP_C_FILES += $(sort $(wildcard $(APP_PATH)/nimcache/*.c))
 
 APP_INCLUDES += -Iutil
 
-#Uncomment the following to enable shell support
-COMMAND_SHELL = 1
-
 #Uncomment the following to enable ESP8266 WIFI support
 #ESP8266 = 1
 
