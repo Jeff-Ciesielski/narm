@@ -38,12 +38,11 @@ proc startScheduler*(): void =
 
   # Simple round robin scheduling
   # TODO: Add other scheduling algos (prio queue, etc)
+  # TODO: add a way to mark tasks 'dead'
   while theScheduler.taskCount > 0:
     for i in 0..<theScheduler.taskCount:
       if theScheduler.tasks[i].resumable:
         discard theScheduler.tasks[i].resume()
-      else:
-        dec(theScheduler.taskCount)
 
   printf("no more tasks")
 
