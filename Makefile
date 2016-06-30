@@ -114,7 +114,7 @@ $(TARGET).bin: $(TARGET).elf
 
 nimcache:
 	@printf " Regenerating Nim cache\n"
-	$(Q)nim c --compile_only -p=libs/narm_runtime -p=libs/narmos $(NIM_IMPORTS) $(APP_PATH)/main.nim
+	$(Q)nim c --compile_only -d:release -p=libs/narm_runtime -p=libs/narmos $(NIM_IMPORTS) $(APP_PATH)/main.nim
 
 $(TARGET).elf: nimcache libs.mk $(APP_O_FILES) $(CPU_O_FILES) $(LIB_O_FILES)
 	@printf "  LD      $(subst $(shell pwd)/,,$(@))\n"
