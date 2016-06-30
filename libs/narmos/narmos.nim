@@ -1,9 +1,12 @@
 import coro
 import stdio
 import assertions
-
 import narmosqueue
+
+# Exported namespaces
 export narmosqueue
+export assertions
+export stdio
 
 # TODO: Improve scheduling all around...
 
@@ -16,9 +19,9 @@ type
   Timer* = (proc(arg: pointer): void {.cdecl.})
 
   TimerType* = enum
-    inactive = 0
-    oneShot = 1
-    periodic = 2
+    Inactive = 0
+    OneShot = 1
+    Periodic = 2
 
   TimerObj = object
     callback: Timer
@@ -39,7 +42,7 @@ type
 # global scheduler singleton
 var theScheduler* = Scheduler()
 
-proc systemInit(): int {.importc: "system_init", header: "cpu.h", cdecl.}
+proc systemInit(): bool {.importc: "system_init", header: "cpu.h", cdecl.}
 proc systemTime*(): uint64 {.importc: "get_system_time", header:"cpu.h", cdecl.}
 proc systemSleep(): void {.importc: "system_sleep", header:"cpu.h", cdecl.}
 
@@ -53,7 +56,7 @@ template taskYield*() =
 
 proc createTask*(t: Task, stackSize: uint = 128): TaskHandle =
   result = t.coSpawn(stackSize)
-  theScheduler.tasks[theScheduler.taskCount] = t.coSpawn(stackSize)
+  theScheduler.tasks[theScheduler.taskCount] = result
   inc(theScheduler.taskCount)
 
 # Timer utilities
@@ -65,7 +68,7 @@ proc getAvailableTimer(): TimerIndex =
   var timerAvailable = false
 
   for i in 0..<theScheduler.timers.len:
-    if theScheduler.timers[i].timerType == inactive:
+    if theScheduler.timers[i].timerType == Inactive:
       result = i
       timerAvailable = true
       break
@@ -97,30 +100,27 @@ proc sequenceTimer(t: ptr TimerObj, s: ptr Scheduler = theScheduler.addr): void 
 proc queueNextTimer(s: ptr Scheduler = theScheduler.addr): void =
   s.nextTimer = s.nextTimer.next
 
-
-proc startPeriodicTimer*(t: Timer, period: uint64): TimerIndex =
-
-  result = getAvailableTimer()
-
-  theScheduler.timers[result].callback = t
-  theScheduler.timers[result].timerType = periodic
-  theScheduler.timers[result].expiration = systemTime() + period
-  theScheduler.timers[result].period = systemTime() + period
-
-  theScheduler.timers[result].addr.sequenceTimer()
-
-
-
-proc startOneShotTimer*(t: Timer, period: uint64): TimerIndex =
+proc startGenericTimer(t: Timer, tType: TimerType, period, expiration: uint64): TimerIndex =
 
   result = getAvailableTimer()
 
   theScheduler.timers[result].callback = t
-  theScheduler.timers[result].timerType = oneShot
-  theScheduler.timers[result].expiration = systemTime() + period
+  theScheduler.timers[result].timerType = tType
+  theScheduler.timers[result].expiration = expiration
+  theScheduler.timers[result].period = period
 
   theScheduler.timers[result].addr.sequenceTimer()
 
+
+template startPeriodicTimer*(t: Timer, period: uint64): TimerIndex =
+
+  startGenericTimer(t, Periodic, period, systemTime() + period)
+
+template startOneShotTimer*(t: Timer, duration: uint64): TimerIndex =
+  startGenericTimer(t, OneShot, 0, systemTime() + duration)
+
+template startAbsoluteTimer*(t: Timer, expiration: uint64): TimerIndex =
+  startGenericTimer(t, OneShot, 0, expiration)
 
 declareTask(timerTask):
   while true:
@@ -130,8 +130,8 @@ declareTask(timerTask):
       let spentTimer = theScheduler.nextTimer
       theScheduler.addr.queueNextTimer()
       case spentTimer.timerType:
-        of oneShot:  spentTimer.timerType = inactive
-        of periodic:
+        of OneShot:  spentTimer.timerType = Inactive
+        of Periodic:
           spentTimer.expiration = execTime + spentTimer.period
           spentTimer.sequenceTimer()
         else: continue
@@ -141,8 +141,7 @@ declareTask(timerTask):
 
 proc startScheduler*(): void =
 
-  # TODO: Don't discard
-  discard systemInit()
+  assertFatal(systemInit())
   let timerTask = createTask(timerTask, 512)
 
   # Simple round robin scheduling
