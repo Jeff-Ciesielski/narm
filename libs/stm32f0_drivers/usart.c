@@ -128,13 +128,15 @@ static struct usart *usart_lookup(uint8_t usart_no)
 {
 
 #ifdef USART1_ENABLE
-	if (usart_no == USART_1)
+	if (USART_1 == usart_no) {
 		return &usarts[0];
+	}
 #endif
 
 #ifdef USART2_ENABLE
-	if (usart_no == USART_2)
+	if (USART_2 == usart_no) {
 		return &usarts[1];
+	}
 #endif
 
 	return NULL;
@@ -147,8 +149,9 @@ int usart_init(int usart_no, uint32_t baud)
 	NVIC_InitTypeDef nvic_init;
 	struct usart *u = usart_lookup(usart_no);
 
-	if (!u)
+	if (!u) {
 		return -ENODEV;
+	}
 
 	u->gpios.rx_clock_cmd(u->gpios.rx_pin_clock, ENABLE);
 	u->gpios.tx_clock_cmd(u->gpios.tx_pin_clock, ENABLE);
@@ -204,8 +207,9 @@ int usart_enable_autocrlf(int usart_no, bool enabled)
 {
 	struct usart *u = usart_lookup(usart_no);
 
-	if (!u)
+	if (!u) {
 		return -ENODEV;
+	}
 
 	u->autocrlf = enabled;
 
@@ -220,14 +224,16 @@ int usart_write(int usart_no, char *s, int len)
 
 	struct usart *u = usart_lookup(usart_no);
 
-	if (!u)
+	if (!u) {
 		return -ENODEV;
+	}
 
-	if(!u->initialized)
+	if(!u->initialized) {
 		return -ENOTCONN;
+	}
 
 	while (len--) {
-		if (*s == '\n' && u->autocrlf) {
+		if ('\n' == *s && u->autocrlf) {
 			q_ret = queue_enqueue(u->buffers.tx, &linefeed, -1);
 			q_ret &= queue_enqueue(u->buffers.tx, s, -1);
 		} else {
@@ -237,8 +243,9 @@ int usart_write(int usart_no, char *s, int len)
 		s++;
 		ret++;
 
-		if (q_ret != 0)
+		if (0 != q_ret) {
 			return -EIO;
+		}
 
 		USART_ITConfig(u->periph, USART_IT_TXE, ENABLE);
 	}
@@ -259,12 +266,14 @@ int usart_read(int usart_no, char *d, int len, int timeout)
 	if (!u)
 		return -ENODEV;
 
-	if (!u->initialized)
+	if (!u->initialized) {
 		return -ENOTCONN;
+	}
 
 	while (len--) {
-		if (queue_dequeue(u->buffers.rx, d++, timeout) != 0)
+		if (queue_dequeue(u->buffers.rx, d++, timeout) != 0) {
 			return ret;
+		}
 		ret++;
 	}
 
@@ -292,8 +301,9 @@ static void usart_common_irq(struct usart *u)
 	if (USART_GetITStatus(u->periph, USART_IT_RXNE) != RESET) {
 		c = (char)USART_ReceiveData(u->periph);
 		q_ret = queue_enqueue(u->buffers.rx, &c, 0);
-		if (q_ret != 0)
+		if (0 != q_ret) {
 			u->rx_overflow = true;
+		}
 	}
 }
 
