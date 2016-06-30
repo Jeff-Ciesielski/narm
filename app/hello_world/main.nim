@@ -1,17 +1,18 @@
 import narmos
-import stdio
 import usart
 import shell
 import cstrmatch
-import assertions
 
 var  tickCount: int
 
-declareTimer(tickCallback):
+declareTimer(OneSecondTick):
   inc(tickCount)
 
 declareTimer(TenSecondNotification):
-  printf("It's been 10 seconds: (%dms)\n", systemTime().uint32)
+  printf("\nIt's been 10 seconds. System Time: (%dms)\n", systemTime().uint32)
+
+declareTimer(TwelveFifteen):
+  printf("\nIt's been 1215 ms. System Time: (%dms)\n", systemTime().uint32)
 
 shellHandler(printTicks):
   printf("Tick Count: %d\n", tickCount)
@@ -40,11 +41,12 @@ declareTask(setupTask):
   shell.registerCommand("time", "print the system time", printTime)
   shell.registerCommand("arg", "arg example [foo, bar, baz]", argExample)
 
-  discard startPeriodicTimer(tickCallback, 1000)
+  discard startPeriodicTimer(OneSecondTick, 1000)
   discard startOneShotTimer(TenSecondNotification, 10 * 1000)
+  discard startAbsoluteTimer(TwelveFifteen, 1215)
 
 when isMainModule:
-  stdio.enableUnbufferedIO()
+  enableUnbufferedIO()
   discard createTask(setupTask, 1024)
 
   startScheduler()
