@@ -5,8 +5,8 @@ TARGET = hello_world
 LINK_MEM = linker.ld
 APP_START_ADDRESS = 0x08000000
 
-#Version of FreeRTOS we'll be using
-FREERTOS = FreeRTOSV8.2.3
+#Uncomment to use narmos
+NARMOS = 1
 
 # Uncomment the following to enable STM32 Peripheral libraries
 STM32F0XX_LIBS = 1

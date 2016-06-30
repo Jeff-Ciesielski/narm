@@ -61,6 +61,8 @@ NIM_INCLUDES = $(patsubst %, -I%, $(NIM_PATHS))
 LIBS = -lnosys
 
 INCLUDES += $(CPU_INCLUDES) $(BOARD_INCLUDES) $(LIB_INCLUDES) $(APP_INCLUDES) $(NIM_INCLUDES)
+INCLUDES += -Icpu/common
+
 CFLAGS = $(INCLUDES) $(CPU_DEFINES) $(BOARD_DEFINES) $(APP_DEFINES)                      \
 	$(CPU_FLAGS) -Os -Wall -Wno-pragmas -Wno-unused-but-set-variable -fno-common     \
 	-c -mthumb -ffunction-sections -fdata-sections -flto                             \
@@ -86,11 +88,11 @@ endif
 -include libs.mk
 
 LIB_C_FILES += $(wildcard libs/newlib_stubs/*.c)
-
 LIB_INCLUDES += -Ilibs/rtos_nim
 
 APP_O_FILES = $(APP_C_FILES:.c=.o) $(APP_S_FILES:.s=.o)
-LIB_O_FILES  = $(LIB_C_FILES:.c=.o) $(LIB_S_FILES:.s=.o)
+CPU_O_FILES = $(CPU_C_FILES:.c=.o) $(CPU_S_FILES:.s=.o)
+LIB_O_FILES = $(LIB_C_FILES:.c=.o) $(LIB_S_FILES:.s=.o)
 
 ifeq ($(TARGET),)
   $(error TARGET is not defined, please define it in your applications config.mk)
@@ -112,11 +114,11 @@ $(TARGET).bin: $(TARGET).elf
 
 nimcache:
 	@printf " Regenerating Nim cache\n"
-	$(Q)nim c --compile_only -p=libs/narm_runtime -p=libs/rtos_nim $(NIM_IMPORTS) $(APP_PATH)/main.nim
+	$(Q)nim c --compile_only -p=libs/narm_runtime -p=libs/narmos $(NIM_IMPORTS) $(APP_PATH)/main.nim
 
-$(TARGET).elf: nimcache libs.mk $(APP_O_FILES) $(LIB_O_FILES)
+$(TARGET).elf: nimcache libs.mk $(APP_O_FILES) $(CPU_O_FILES) $(LIB_O_FILES)
 	@printf "  LD      $(subst $(shell pwd)/,,$(@))\n"
-	$(Q)$(CC) -o $@ $(APP_O_FILES) $(LIB_O_FILES) $(LDFLAGS)
+	$(Q)$(CC) -o $@ $(APP_O_FILES) $(LIB_O_FILES) $(CPU_O_FILES) $(LDFLAGS)
 	$(Q)$(SIZE) $(TARGET).elf
 
 %.nim: %.c
@@ -134,6 +136,8 @@ clean:
 	$(Q)rm -f \
 	$(APP_D_FILES)              \
 	$(APP_O_FILES)              \
+	$(CPU_D_FILES)              \
+	$(CPU_O_FILES)              \
 	$(LIB_D_FILES)              \
 	$(LIB_O_FILES)              \
 	$(TARGET).bin $(TARGET).elf \
@@ -145,7 +149,7 @@ st-flash: $(TARGET).bin
 	sudo st-flash write $(TARGET).bin 0x08000000
 
 debug: $(TARGET).elf
-	$(OPENOCD) -f $(APP_PATH)/debug.ocd
+	$(OPENOCD) -f $(BOARD_PATH)/board.ocd
 
 flash: $(TARGET).elf
 	$(OPENOCD) -f $(BOARD_PATH)/board.ocd -c "program $(TARGET).elf verify" -c "reset run" -c "exit"

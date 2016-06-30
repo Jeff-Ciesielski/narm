@@ -1,8 +1,4 @@
-#include <FreeRTOS.h>
-#include <timers.h>
-#include <task.h>
-#include <queue.h>
-#include <semphr.h>
+#include <narmos.h>
 
 #include <platform_debug.h>
 
@@ -33,12 +29,6 @@ char **environ = __env;
 
 #define WRITE_BUF_SIZE 32
 int _write(int file, char *ptr, int len);
-
-void _exit(int status)
-{
-	(void)status;
-	while (1);
-}
 
 int _close(int file)
 {

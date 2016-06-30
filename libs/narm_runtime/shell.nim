@@ -1,5 +1,5 @@
 import stdio
-import rtos
+import narmos
 import cstrmatch
 
 const
@@ -17,7 +17,6 @@ type
 
   ShellState = object
     initialized: bool
-    lock: SemaphoreHandle
     commands: array[0 .. ShellMaxCommands, ShellCommand]
     commandCount: int
     inputBuf: array[0 .. InputBufferSize, char]
@@ -113,7 +112,7 @@ proc processInput(): void =
     discard putchar(c)
 
 
-rtosTask(shellTask):
+declareTask(shellTask):
   printf("%s\n%s", shellBanner, shellPromptText)
   while true:
     processInput()
@@ -121,8 +120,7 @@ rtosTask(shellTask):
 
 proc init*(): void =
 
-  state.lock = createBinarySemaphore()
   registerCommand("help", "Show this dialog", shellHelp)
-  discard rtos.createTask(shellTask, "Shell", 350, nil, 8)
+  discard createTask(shellTask, 350)
 
   state.initialized = true

@@ -1,6 +1,5 @@
 import stdio
 import usart
-import rtos
 import unistd
 
 const
@@ -11,7 +10,7 @@ var boardDebugIface = usart2
 proc nlRead(f: int, dest: cstring, length: int): int {.exportc: "_read", cdecl.} =
   case f
   of stdInFileNo:
-    result = boardDebugIface.read(dest, length, MaxDelay)
+    result = boardDebugIface.read(dest, length, 1000)
 
   else:
     result = -1

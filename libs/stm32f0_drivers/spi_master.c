@@ -7,12 +7,6 @@
 /* of the MIT license.  See the LICENSE file for details.        */
 /*****************************************************************/
 
-#include <FreeRTOS.h>
-#include <timers.h>
-#include <task.h>
-#include <queue.h>
-#include <semphr.h>
-
 #include <spi_master.h>
 #include <stm32f0xx_gpio.h>
 #include <stm32f0xx_rcc.h>

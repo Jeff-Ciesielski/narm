@@ -10,11 +10,7 @@
 #include <stdio.h>
 #include <errno.h>
 
-#include <FreeRTOS.h>
-#include <timers.h>
-#include <task.h>
-#include <queue.h>
-#include <semphr.h>
+#include <narmos.h>
 
 #include <stm32f0xx_usart.h>
 #include <stm32f0xx_misc.h>
@@ -23,14 +19,26 @@
 
 #include <usart.h>
 
+
+/* Queue Storage */
+#ifdef USART1_ENABLE
+DECLARE_QUEUE(uint8_t, uart1_tx_queue, UART_BUFFER_SIZE);
+DECLARE_QUEUE(uint8_t, uart1_rx_queue, UART_BUFFER_SIZE);
+#endif
+
+#ifdef USART2_ENABLE
+DECLARE_QUEUE(uint8_t, uart2_tx_queue, UART_BUFFER_SIZE);
+DECLARE_QUEUE(uint8_t, uart2_rx_queue, UART_BUFFER_SIZE);
+#endif
+
 struct usart {
 	USART_TypeDef *periph;
 	bool autocrlf;
 	bool initialized;
 
 	struct {
-		xQueueHandle tx;
-		xQueueHandle rx;
+		void *tx;
+		void *rx;
 	} buffers;
 
 	struct {
@@ -43,7 +51,7 @@ struct usart {
 		uint16_t rxpin;
 		void (*rx_clock_cmd)(uint32_t, FunctionalState);
 		uint32_t rx_pin_clock;
-		uint8_t         rx_pinsource;
+		uint8_t  rx_pinsource;
 		GPIO_TypeDef *txport;
 		uint16_t txpin;
 		void (*tx_clock_cmd)(uint32_t, FunctionalState);
@@ -59,6 +67,10 @@ struct usart {
 		.periph = USART1,
 		.autocrlf = false,
 		.initialized = false,
+		.buffers = {
+			.tx = &uart1_tx_queue,
+			.rx = &uart1_rx_queue,
+		},
 		.rcc = {
 			.periph_clock_cmd = RCC_APB2PeriphClockCmd,
 			.rccperiph = RCC_APB2Periph_USART1,
@@ -84,6 +96,10 @@ struct usart {
 		.periph = USART2,
 		.autocrlf = false,
 		.initialized = false,
+		.buffers = {
+			.tx = &uart2_tx_queue,
+			.rx = &uart2_rx_queue,
+		},
 		.rcc = {
 			.periph_clock_cmd = RCC_APB1PeriphClockCmd,
 			.rccperiph = RCC_APB1Periph_USART2,
@@ -105,6 +121,8 @@ struct usart {
 	},
 #endif
 };
+
+
 
 static struct usart *usart_lookup(uint8_t usart_no)
 {
@@ -131,15 +149,6 @@ int usart_init(int usart_no, uint32_t baud)
 
 	if (!u)
 		return -ENODEV;
-
-	/* Initialize tx/rx buffers */
-	u->buffers.tx = xQueueCreate(UART_BUFFER_SIZE, sizeof(uint8_t));
-	if (!u->buffers.tx)
-		return -ENOMEM;
-
-	u->buffers.rx = xQueueCreate(UART_BUFFER_SIZE, sizeof(uint8_t));
-	if (!u->buffers.rx)
-		return -ENOMEM;
 
 	u->gpios.rx_clock_cmd(u->gpios.rx_pin_clock, ENABLE);
 	u->gpios.tx_clock_cmd(u->gpios.tx_pin_clock, ENABLE);
@@ -205,7 +214,7 @@ int usart_enable_autocrlf(int usart_no, bool enabled)
 
 int usart_write(int usart_no, char *s, int len)
 {
-	portBASE_TYPE q_ret;
+	int q_ret;
 	int ret = 0;
 	static char linefeed = '\r';
 
@@ -219,16 +228,16 @@ int usart_write(int usart_no, char *s, int len)
 
 	while (len--) {
 		if (*s == '\n' && u->autocrlf) {
-			q_ret = xQueueSend(u->buffers.tx, &linefeed, portMAX_DELAY);
-			q_ret &= xQueueSend(u->buffers.tx, s, portMAX_DELAY);
+			q_ret = queue_enqueue(u->buffers.tx, &linefeed, -1);
+			q_ret &= queue_enqueue(u->buffers.tx, &s, -1);
 		} else {
-			q_ret = xQueueSend(u->buffers.tx, s, portMAX_DELAY);
+			q_ret = queue_enqueue(u->buffers.tx, &s, -1);
 		}
 
 		s++;
 		ret++;
 
-		if (q_ret != pdTRUE)
+		if (q_ret != 0)
 			return -EIO;
 
 		USART_ITConfig(u->periph, USART_IT_TXE, ENABLE);
@@ -254,7 +263,7 @@ int usart_read(int usart_no, char *d, int len, int timeout)
 		return -ENOTCONN;
 
 	while (len--) {
-		if (xQueueReceive(u->buffers.rx, d++, timeout) != pdTRUE)
+		if (queue_dequeue(u->buffers.rx, d++, timeout) != 0)
 			return ret;
 		ret++;
 	}
@@ -269,11 +278,11 @@ int usart_getchar(int usart_no, char *c, int timeout)
 
 static void usart_common_irq(struct usart *u)
 {
-	portBASE_TYPE q_ret, tx_task_woken, rx_task_woken;
+	int q_ret;
 	char c;
 
 	if (USART_GetITStatus(u->periph, USART_IT_TXE) != RESET) {
-		if (xQueueReceiveFromISR(u->buffers.tx, &c, &tx_task_woken) != pdTRUE) {
+		if (queue_dequeue(u->buffers.tx, &c, 0) != 0) {
 			USART_ITConfig(u->periph, USART_IT_TXE, DISABLE);
 		} else {
 			USART_SendData(u->periph, (uint16_t)c);
@@ -282,11 +291,10 @@ static void usart_common_irq(struct usart *u)
 
 	if (USART_GetITStatus(u->periph, USART_IT_RXNE) != RESET) {
 		c = (char)USART_ReceiveData(u->periph);
-		q_ret = xQueueSendFromISR(u->buffers.rx, &c, &rx_task_woken);
-		if (q_ret != pdTRUE)
+		q_ret = queue_enqueue(u->buffers.rx, &c, 0);
+		if (q_ret != 0)
 			u->rx_overflow = true;
 	}
-	portEND_SWITCHING_ISR(tx_task_woken | rx_task_woken);
 }
 
 #ifdef USART1_ENABLE

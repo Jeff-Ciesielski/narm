@@ -6,3 +6,5 @@ STM32F0_DRIVERS = 1
 
 CPU_FLAGS = -mfloat-abi=soft
 CPU_DEFINES = -D$(CPU_ARCH) -DSTM32F0XX
+
+CPU_C_FILES += $(CPU_BASE)/stm32f0xx_cpu.c
