@@ -19,3 +19,8 @@ uint64_t get_system_time(void)
 {
 	return ticks;
 }
+
+void system_sleep(void)
+{
+	__WFI();
+}
