@@ -25,6 +25,7 @@ type
     expiration: uint64
     period: uint64
     timerType: TimerType
+    next: ptr TimerObj
 
   Scheduler* = object
     tasks: array[16, TaskHandle]
@@ -32,6 +33,7 @@ type
 
     timers: array[16, TimerObj]
     timerCount: TimerIndex
+    nextTimer: ptr TimerObj
 
 
 # global scheduler singleton
@@ -39,6 +41,7 @@ var theScheduler* = Scheduler()
 
 proc systemInit(): int {.importc: "system_init", header: "cpu.h", cdecl.}
 proc systemTime*(): uint64 {.importc: "get_system_time", header:"cpu.h", cdecl.}
+proc systemSleep(): void {.importc: "system_sleep", header:"cpu.h", cdecl.}
 
 # Task utilities
 template declareTask*(name, actions: untyped) =
@@ -69,6 +72,31 @@ proc getAvailableTimer(): TimerIndex =
 
   assertFatal(timerAvailable == false)
 
+proc sequenceTimer(t: ptr TimerObj, s: ptr Scheduler = theScheduler.addr): void =
+  # TODO: Convert to heap or BST
+  if s.nextTimer == nil:
+    s.nextTimer = t
+    t.next = nil
+  else:
+    var head = s.nextTimer
+
+    # First, check to see if we should just take over the front of the line
+    if t.expiration < head.expiration:
+      t.next = head
+      s.nextTimer = t
+    else:
+      while head != nil:
+        if head.next == nil or t.expiration < head.next.expiration:
+          let storage: ptr TimerObj = head.next
+          head.next = t
+          t.next = storage
+          return
+
+        head = head.next
+
+proc queueNextTimer(s: ptr Scheduler = theScheduler.addr): void =
+  s.nextTimer = s.nextTimer.next
+
 
 proc startPeriodicTimer*(t: Timer, period: uint64): TimerIndex =
 
@@ -79,6 +107,9 @@ proc startPeriodicTimer*(t: Timer, period: uint64): TimerIndex =
   theScheduler.timers[result].expiration = systemTime() + period
   theScheduler.timers[result].period = systemTime() + period
 
+  theScheduler.timers[result].addr.sequenceTimer()
+
+
 
 proc startOneShotTimer*(t: Timer, period: uint64): TimerIndex =
 
@@ -88,18 +119,25 @@ proc startOneShotTimer*(t: Timer, period: uint64): TimerIndex =
   theScheduler.timers[result].timerType = oneShot
   theScheduler.timers[result].expiration = systemTime() + period
 
+  theScheduler.timers[result].addr.sequenceTimer()
+
 
 declareTask(timerTask):
   while true:
-    for i in 0..theScheduler.timers.high:
-      if (theScheduler.timers[i].timerType != inactive) and (systemTime() >= theScheduler.timers[i].expiration):
-        let execTime = systemTime()
-        theScheduler.timers[i].callback(nil)
-        case theScheduler.timers[i].timerType:
-          of oneShot:  theScheduler.timers[i].timerType = inactive
-          of periodic: theScheduler.timers[i].expiration = execTime + theScheduler.timers[i].period
-          else: continue
+    if (theScheduler.nextTimer != nil) and (systemTime() >= theScheduler.nextTimer.expiration):
+      let execTime = systemTime()
+      theScheduler.nextTimer.callback(nil)
+      let spentTimer = theScheduler.nextTimer
+      theScheduler.addr.queueNextTimer()
+      case spentTimer.timerType:
+        of oneShot:  spentTimer.timerType = inactive
+        of periodic:
+          spentTimer.expiration = execTime + spentTimer.period
+          spentTimer.sequenceTimer()
+        else: continue
+
     taskYield()
+
 
 proc startScheduler*(): void =
 
@@ -115,7 +153,9 @@ proc startScheduler*(): void =
       if theScheduler.tasks[i].resumable():
         discard theScheduler.tasks[i].resume()
 
-    if timertask.resumable():
-      discard timerTask.resume()
+      if timertask.resumable():
+        discard timerTask.resume()
 
-  printf("no more tasks")
+    systemSleep()
+
+  errFatal("no more tasks")
