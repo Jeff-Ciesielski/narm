@@ -7,11 +7,17 @@ import assertions
 
 var  tickCount: int
 
-#timerHandler(tickCallback):
-#  inc(tickCount)
+declareTimer(tickCallback):
+  inc(tickCount)
+
+declareTimer(TenSecondNotification):
+  printf("It's been 10 seconds: (%dms)\n", systemTime().uint32)
 
 shellHandler(printTicks):
-  printf("Tick Count: %d", tickCount)
+  printf("Tick Count: %d\n", tickCount)
+
+shellHandler(printTime):
+  printf("System Time (u32 scaled): %ld\n", systemTime().uint32)
 
 shellHandler(argExample):
   for x in 1..argc-1:
@@ -31,12 +37,11 @@ declareTask(setupTask):
 
   shell.init()
   shell.registerCommand("ticks", "print number of elapsed ticks", printTicks)
+  shell.registerCommand("time", "print the system time", printTime)
   shell.registerCommand("arg", "arg example [foo, bar, baz]", argExample)
 
-  #var tickTimer = rtos.createSoftTimer("Tick", 1000, true, nil, tickCallback)
-  #assertFatal(tickTimer == nil)
-
-  #discard rtos.startSoftTimer(tick_timer, 0)
+  discard startPeriodicTimer(tickCallback, 1000)
+  discard startOneShotTimer(TenSecondNotification, 10 * 1000)
 
 when isMainModule:
   stdio.enableUnbufferedIO()
