@@ -7,10 +7,10 @@ const
 
 var boardDebugIface = usart2
 
-proc nlRead(f: int, dest: cstring, length: int): int {.exportc: "_read", cdecl.} =
-  case f
+proc nlRead(file: int, dest: cstring, length: int): int {.exportc: "_read", cdecl.} =
+  case file
   of stdInFileNo:
-    result = boardDebugIface.read(dest, length, 1000)
+    result = boardDebugIface.read(dest, length, -1)
 
   else:
     result = -1
