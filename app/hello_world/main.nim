@@ -40,6 +40,6 @@ declareTask(setupTask):
 
 when isMainModule:
   stdio.enableUnbufferedIO()
-  discard createTask(setupTask, 150)
+  discard createTask(setupTask, 1024)
 
   startScheduler()
