@@ -229,9 +229,9 @@ int usart_write(int usart_no, char *s, int len)
 	while (len--) {
 		if (*s == '\n' && u->autocrlf) {
 			q_ret = queue_enqueue(u->buffers.tx, &linefeed, -1);
-			q_ret &= queue_enqueue(u->buffers.tx, &s, -1);
+			q_ret &= queue_enqueue(u->buffers.tx, s, -1);
 		} else {
-			q_ret = queue_enqueue(u->buffers.tx, &s, -1);
+			q_ret = queue_enqueue(u->buffers.tx, s, -1);
 		}
 
 		s++;
