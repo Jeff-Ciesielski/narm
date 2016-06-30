@@ -150,7 +150,7 @@ void coroutine_main(void *ret, unsigned int stack_size) {
  * initial stack frame for the next coroutine.
  */
 void coroutine_start(unsigned int stack_size) {
-	char stack[stack_size];
+	char stack[stack_size] __attribute__((aligned((sizeof(int)))));
 	coroutine_main(stack, stack_size);
 }
 
