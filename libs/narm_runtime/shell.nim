@@ -66,7 +66,7 @@ proc parseCommand(): void =
   var inArg: bool
   var argCount: int
 
-  for i in 0 .. state.inputPos - 1:
+  for i in 0 .. <state.inputPos:
     if isWhiteSpace(state.inputBuf[i]) and inArg:
         state.inputBuf[i] = '\0'
         inArg = false
