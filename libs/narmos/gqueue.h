@@ -44,15 +44,17 @@ struct generic_queue {
 };
 
 #define DECLARE_QUEUE(element_type, name, max_size)		\
+	element_type __ #name element_storage[max_size];	\
         struct name {						\
                 struct generic_queue gq;                        \
-                element_type __elements[max_size];              \
+		element_type *__elements;			\
         } name = {                                              \
                 .gq={                                           \
                         .len		= 0,                    \
                         .item_size	= sizeof(element_type), \
                         .max_capacity	= max_size,             \
-                },                                              \
+		  },						\
+		.__elements = __ #name element_storage;		\
         }
 
 
@@ -87,7 +89,7 @@ static inline int queue_peek(volatile void *q, void *elt)
 	}
 }
 
-/* TODO: Add ISR variants */
+/* TODO: ISR Variants */
 int queue_enqueue(volatile void *q, const void *elt, int timeout) __attribute__((nonnull));
 int queue_dequeue(volatile void *q, void *elt, int timeout) __attribute__((nonnull));
 
