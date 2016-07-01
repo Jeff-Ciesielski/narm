@@ -31,6 +31,37 @@ shellHandler(argExample):
     else:
       printf("Unhandled arg: %d - %s", x, argv[x])
 
+var helloMutex = declareMutex()
+
+declareTask(printout1):
+  withLock(helloMutex):
+    printf("H")
+    taskYield()
+    printf("e")
+    taskYield()
+    printf("l")
+    taskYield()
+    printf("l")
+    taskYield()
+    printf("o")
+    taskYield()
+    printf(" ")
+
+declareTask(printout2):
+  withLock(helloMutex):
+    taskYield()
+    printf("W")
+    taskYield()
+    printf("o")
+    taskYield()
+    printf("r")
+    taskYield()
+    printf("l")
+    taskYield()
+    printf("d")
+    taskYield()
+    printf("\n")
+
 declareTask(setupTask):
   # Init the debug usart
   usart2.init(115200)
@@ -44,6 +75,8 @@ declareTask(setupTask):
   discard startPeriodicTimer(OneSecondTick, 1000)
   discard startOneShotTimer(TenSecondNotification, 10 * 1000)
   discard startAbsoluteTimer(TwelveFifteen, 1215)
+  discard createTask(printout1, 1024)
+  discard createTask(printout2, 1024)
 
 when isMainModule:
   enableUnbufferedIO()
