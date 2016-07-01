@@ -78,8 +78,10 @@ declareTask(setupTask):
   discard createTask(printout1, 1024)
   discard createTask(printout2, 1024)
 
-when isMainModule:
+proc main() =
   enableUnbufferedIO()
   discard createTask(setupTask, 1024)
 
   startScheduler()
+
+main()
