@@ -62,6 +62,12 @@ declareTask(printout2):
     taskYield()
     printf("\n")
 
+declareTask(sleepyTask):
+  withLock(helloMutex):
+    printf("Going to sleep now!\n")
+    taskSleep(5000)
+    printf("I slept for 5 seconds!\n")
+
 declareTask(setupTask):
   # Init the debug usart
   usart2.init(115200)
@@ -77,6 +83,7 @@ declareTask(setupTask):
   discard startAbsoluteTimer(TwelveFifteen, 1215)
   discard createTask(printout1, 1024)
   discard createTask(printout2, 1024)
+  discard createTask(sleepyTask, 1024)
 
 proc main() =
   enableUnbufferedIO()

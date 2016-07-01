@@ -54,6 +54,11 @@ template declareTask*(name, actions: untyped) =
 template taskYield*() =
   discard coYield(nil)
 
+proc taskSleep*(ticksToSleep: uint64) =
+  let wakeTime = systemTime() + ticksToSleep
+  while systemTime() < wakeTime:
+    taskYield()
+
 proc createTask*(t: Task, stackSize: uint = 128): TaskHandle =
   result = t.coSpawn(stackSize)
   theScheduler.tasks[theScheduler.taskCount] = result
