@@ -143,7 +143,8 @@ clean:
 	$(TARGET).bin $(TARGET).elf \
 	$(TARGET).map               \
 	$(LIBS_ALL)                 \
-	libs.mk
+	libs.mk                     \
+	$(APP_DIR)/nimcache
 
 st-flash: $(TARGET).bin
 	sudo st-flash write $(TARGET).bin 0x08000000
