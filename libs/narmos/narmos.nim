@@ -39,6 +39,8 @@ type
     tasks: array[16, TaskObj]
     taskCount: TaskIndex
     nextTask: ptr TaskObj
+    deadTasks: ptr TaskObj
+    deadTaskCount: uint
 
     timers: array[16, TimerObj]
     timerCount: TimerIndex
@@ -176,7 +178,7 @@ proc startScheduler*(requiredStack: uint = 1024): void =
   # allow the current frame to keep growing) and schedule them in a
   # linked ring formation
 
-  # TODO: Add other scheduling algos (prio queue, etc)
+  # TODO: Add priority queue scheduler?
   for i in 0..<theScheduler.taskCount:
     var stackSize: uint
     if i == 0:
@@ -202,13 +204,18 @@ proc startScheduler*(requiredStack: uint = 1024): void =
   while theScheduler.taskCount > 0:
 
     discard theScheduler.nextTask.handle.resume()
-    # If the next task is not resumable, we should just remove it from
-    # the list and carry on
-    if not theScheduler.nextTask.next.handle.resumable():
-      # TODO: add dead tasks list
-      theScheduler.nextTask.next = theScheduler.nextTask.next.next
+    # If the next task is not resumable, we should move it to the dead
+    # tasks list and leapfrog over it
+    while not theScheduler.nextTask.next.handle.resumable():
+      let leapTask = theScheduler.nextTask.next.next
+      # Insert the dead task in the front of the 'dead tasks' list
+      theScheduler.nextTask.next.next = theScheduler.deadTasks
+      theScheduler.deadTasks = theScheduler.nextTask.next
+      # Set up the next task to be scheduled
+      theScheduler.nextTask.next = leapTask
+      # Update counters
       dec(theScheduler.taskCount)
-
+      inc(theScheduler.deadTaskCount)
 
     # If there are any timers expired, go service them
     if (theScheduler.nextTimer != nil) and (systemTime() >= theScheduler.nextTimer.expiration):
