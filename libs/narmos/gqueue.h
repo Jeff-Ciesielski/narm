@@ -44,17 +44,15 @@ struct generic_queue {
 };
 
 #define DECLARE_QUEUE(element_type, name, max_size)		\
-	element_type __ #name element_storage[max_size];	\
         struct name {						\
                 struct generic_queue gq;                        \
-		element_type *__elements;			\
+		element_type __element_storage[max_size];	\
         } name = {                                              \
                 .gq={                                           \
                         .len		= 0,                    \
                         .item_size	= sizeof(element_type), \
                         .max_capacity	= max_size,             \
 		  },						\
-		.__elements = __ #name element_storage;		\
         }
 
 
