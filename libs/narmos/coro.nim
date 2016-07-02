@@ -25,9 +25,9 @@ type
 ## #  and may be discarded.
 ## # 
 
-proc coSpawn*(c: Coroutine, stack_size: uint = 128): CoroHandle {.cdecl,
-                                                                  importc: "coroutine",
-                                                                  header: "picoro.h".}
+proc coSpawn*(c: Coroutine, stackSize: uint): CoroHandle {.cdecl,
+                                                           importc: "coroutine",
+                                                           header: "picoro.h".}
   ## #
   ## #  Returns false when the coroutine has run to completion
   ## #  or when it is blocked inside resume().
@@ -52,3 +52,7 @@ proc resume*(c: CoroHandle, arg: pointer = nil): pointer {.cdecl,
 ## # 
 
 proc coYield*(arg: pointer = nil): pointer {.cdecl, importc: "yield", header: "picoro.h".}
+
+
+## Returns the amount of stack space consumed by tasks
+proc coGetConsumedStack*(): cuint {.cdecl, importc: "get_consumed_stack", header: "picoro.h".}

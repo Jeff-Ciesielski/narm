@@ -20,6 +20,9 @@ shellHandler(printTicks):
 shellHandler(printTime):
   printf("System Time (u32 scaled): %ld\n", systemTime().uint32)
 
+shellHandler(stackUsedCmd):
+  printf("Stack Consumed: %u\n", stackConsumed)
+
 shellHandler(argExample):
   for x in 1..argc-1:
     if argv[x] ~= "foo":
@@ -35,7 +38,7 @@ var helloMutex = declareMutex()
 
 declareTask(printout1):
   withLock(helloMutex):
-    printf("H")
+    printf("\nH")
     taskYield()
     printf("e")
     taskYield()
@@ -68,27 +71,25 @@ declareTask(sleepyTask):
     taskSleep(5000)
     printf("I slept for 5 seconds!\n")
 
-declareTask(setupTask):
+proc main() =
+  enableUnbufferedIO()
+
   # Init the debug usart
   usart2.init(115200)
-  printf("\nHello world\n")
 
   shell.init()
   shell.registerCommand("ticks", "print number of elapsed ticks", printTicks)
   shell.registerCommand("time", "print the system time", printTime)
   shell.registerCommand("arg", "arg example [foo, bar, baz]", argExample)
+  shell.registerCommand("stack", "stack space consumed", stackUsedCmd)
 
   discard startPeriodicTimer(OneSecondTick, 1000)
   discard startOneShotTimer(TenSecondNotification, 10 * 1000)
   discard startAbsoluteTimer(TwelveFifteen, 1215)
-  discard createTask(printout1, 1024)
-  discard createTask(printout2, 1024)
-  discard createTask(sleepyTask, 1024)
-
-proc main() =
-  enableUnbufferedIO()
-  discard createTask(setupTask, 1024)
-
+  discard createTask(printout1, 256)
+  discard createTask(printout2, 256)
+  discard createTask(sleepyTask, 256)
+  
   startScheduler()
 
 main()

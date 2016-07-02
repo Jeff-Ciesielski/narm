@@ -121,6 +121,6 @@ declareTask(shellTask):
 proc init*(): void =
 
   registerCommand("help", "Show this dialog", shellHelp)
-  discard createTask(shellTask, 1536)
+  discard createTask(shellTask, 1024)
 
   state.initialized = true

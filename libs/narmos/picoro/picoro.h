@@ -40,4 +40,10 @@ void *resume(coro c, void *arg);
  */
 void *yield(void *arg);
 
+/*
+ * Returns the total amount of stack space consumed by tasks
+ */
+unsigned int get_consumed_stack(void);
+
+
 #endif /* PICORO_H */

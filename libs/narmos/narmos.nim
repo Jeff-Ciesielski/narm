@@ -30,20 +30,31 @@ type
     timerType: TimerType
     next: ptr TimerObj
 
+  TaskObj = object
+    handle: TaskHandle
+    stackSize: uint
+    task: Task
+
   Scheduler* = object
-    tasks: array[16, TaskHandle]
+
+    tasks: array[16, TaskObj]
     taskCount: TaskIndex
 
     timers: array[16, TimerObj]
     timerCount: TimerIndex
     nextTimer: ptr TimerObj
+    started: bool
 
 
 # global scheduler singleton
 var theScheduler* = Scheduler()
 
+# System utilities
 proc systemInit(): bool {.importc: "system_init", header: "cpu.h", cdecl.}
 proc systemTime*(): uint64 {.importc: "get_system_time", header:"cpu.h", cdecl.}
+template stackConsumed*(): uint =
+  coGetConsumedStack()
+
 proc systemSleep(): void {.importc: "system_sleep", header:"cpu.h", cdecl.}
 
 # Task utilities
@@ -59,9 +70,10 @@ proc taskSleep*(ticksToSleep: uint64) =
   while systemTime() < wakeTime:
     taskYield()
 
-proc createTask*(t: Task, stackSize: uint = 128): TaskHandle =
-  result = t.coSpawn(stackSize)
-  theScheduler.tasks[theScheduler.taskCount] = result
+proc createTask*(t: Task, stackSize: uint): TaskHandle =
+  assertFatal(theScheduler.started)
+  theScheduler.tasks[theScheduler.taskCount].task = t
+  theScheduler.tasks[theScheduler.taskCount].stackSize = stackSize
   inc(theScheduler.taskCount)
 
 # Timer utilities
@@ -143,22 +155,46 @@ declareTask(timerTask):
 
     taskYield()
 
+declareTask(bookEndTask):
+  return
 
-proc startScheduler*(): void =
+proc startScheduler*(requiredStack: uint = 1024): void =
 
   assertFatal(systemInit())
+
+  # Create the timer task
+
   let timerTask = createTask(timerTask, 512)
+
+  # Create the bookend.  This is only around to ensure that we stay
+  # within our memory bounds and accurately track our stack usage
+  let bookEnd = createTask(bookEndTask, 0)
+
+  # Mark the scheduler as started to prevent any further task creation
+  theScheduler.started = true
+
+  # Now, spawn all of the threads using the previous thread's stack
+  # space requirement (since when stacks are created, they're created
+  # to allow the current frame to keep growing)
+  for i in 0..<theScheduler.taskCount:
+    var stackSize: uint
+    if i == 0:
+      stackSize = requiredStack
+    else:
+      stackSize = theScheduler.tasks[i - 1].stackSize
+
+    theScheduler.tasks[i].handle = theScheduler.tasks[i].task.coSpawn(stackSize)
+
 
   # Simple round robin scheduling
   # TODO: Add other scheduling algos (prio queue, etc)
   # TODO: add a way to mark tasks 'dead'
   while theScheduler.taskCount > 0:
     for i in 0..<theScheduler.taskCount:
-      if theScheduler.tasks[i].resumable():
-        discard theScheduler.tasks[i].resume()
-
-      if timertask.resumable():
-        discard timerTask.resume()
+      if theScheduler.tasks[i].handle.resumable():
+        discard theScheduler.tasks[i].handle.resume()
+        if timertask.resumable():
+          discard timerTask.resume()
 
     systemSleep()
 

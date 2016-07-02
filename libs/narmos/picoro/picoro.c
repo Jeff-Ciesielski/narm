@@ -7,8 +7,13 @@
 #include <assert.h>
 #include <setjmp.h>
 #include <stdlib.h>
-
+#include <stdio.h>
+#include <alloca.h>
 #include "picoro.h"
+
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+
 
 /*
  * Each coroutine has a jmp_buf to hold its context when suspended.
@@ -29,6 +34,12 @@ static struct coro {
 	struct coro *next;
 	jmp_buf state;
 } first, *running = &first, *idle;
+
+volatile static unsigned int stack_consumed = 0;
+
+/* Unfortunately, we have to use a global variable to track the last
+ * requested stack space... */
+volatile static unsigned int last_stack = 0;
 
 /*
  * A coroutine can be passed to resume() if
@@ -64,8 +75,9 @@ static coro pop(coro *list) {
 static void *pass(coro me, void *arg) {
 	static void *saved;
 	saved = arg;
-	if(!setjmp(me->state))
+	if(!setjmp(me->state)) {
 		longjmp(running->state, 1);
+	}
 	return(saved);
 }
 
@@ -79,9 +91,13 @@ void *yield(void *arg) {
 	return(pass(pop(&running), arg));
 }
 
+unsigned int get_consumed_stack(void) {
+	return stack_consumed;
+}
+
 /* Declare for mutual recursion. */
 void coroutine_start(unsigned int stack_size);
-void coroutine_main(void *ret, unsigned int stack_size);
+void coroutine_main(void *ret);
 
 /*
  * The coroutine constructor function.
@@ -92,8 +108,10 @@ void coroutine_main(void *ret, unsigned int stack_size);
  * pointer and return the activated coroutine's address.
  */
 coro coroutine(void *fun(void *arg), unsigned int stack_size) {
-	if(idle == NULL && !setjmp(running->state))
-		coroutine_start(stack_size);
+	last_stack = stack_size;
+	if(idle == NULL && !setjmp(running->state)) {
+		coroutine_start(last_stack);
+	}
 	return(resume(pop(&idle), fun));
 }
 
@@ -131,13 +149,13 @@ coro coroutine(void *fun(void *arg), unsigned int stack_size) {
  * The conversion between the function pointer and a void pointer is not
  * allowed by ANSI C but we do it anyway.
  */
-void coroutine_main(void *ret, unsigned int stack_size) {
+void coroutine_main(void *ret) {
 	void *(*fun)(void *arg);
 	struct coro me;
 	push(&idle, &me);
 	fun = pass(&me, ret);
 	if(!setjmp(running->state))
-		coroutine_start(stack_size);
+		coroutine_start(last_stack);
 	for(;;) {
 		ret = fun(yield(&me));
 		push(&idle, pop(&running));
@@ -150,8 +168,11 @@ void coroutine_main(void *ret, unsigned int stack_size) {
  * initial stack frame for the next coroutine.
  */
 void coroutine_start(unsigned int stack_size) {
-	char stack[stack_size] __attribute__((aligned((sizeof(int)))));
-	coroutine_main(stack, stack_size);
+	stack_consumed += stack_size;
+	char stack[stack_size + 1] __attribute__((aligned((sizeof(int)))));
+	stack[stack_size] = 1;
+	coroutine_main(stack);
 }
 
 /* eof */
+#pragma GCC pop_options
