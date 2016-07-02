@@ -8,8 +8,6 @@ export narmosqueue
 export assertions
 export stdio
 
-# TODO: Improve scheduling all around...
-
 type
   TaskHandle* = pointer
   Task* = (proc(arg: pointer): pointer {.cdecl.})
@@ -34,15 +32,18 @@ type
     handle: TaskHandle
     stackSize: uint
     task: Task
+    next: ptr TaskObj
 
   Scheduler* = object
 
     tasks: array[16, TaskObj]
     taskCount: TaskIndex
+    nextTask: ptr TaskObj
 
     timers: array[16, TimerObj]
     timerCount: TimerIndex
     nextTimer: ptr TimerObj
+
     started: bool
 
 
@@ -130,7 +131,6 @@ proc startGenericTimer(t: Timer, tType: TimerType, period, expiration: uint64): 
 
 
 template startPeriodicTimer*(t: Timer, period: uint64): TimerIndex =
-
   startGenericTimer(t, Periodic, period, systemTime() + period)
 
 template startOneShotTimer*(t: Timer, duration: uint64): TimerIndex =
@@ -141,19 +141,17 @@ template startAbsoluteTimer*(t: Timer, expiration: uint64): TimerIndex =
 
 declareTask(timerTask):
   while true:
-    if (theScheduler.nextTimer != nil) and (systemTime() >= theScheduler.nextTimer.expiration):
-      let execTime = systemTime()
-      theScheduler.nextTimer.callback(nil)
-      let spentTimer = theScheduler.nextTimer
-      theScheduler.addr.queueNextTimer()
-      case spentTimer.timerType:
-        of OneShot:  spentTimer.timerType = Inactive
-        of Periodic:
-          spentTimer.expiration = execTime + spentTimer.period
-          spentTimer.sequenceTimer()
-        else: continue
-
     taskYield()
+    let execTime = systemTime()
+    theScheduler.nextTimer.callback(nil)
+    let spentTimer = theScheduler.nextTimer
+    theScheduler.addr.queueNextTimer()
+    case spentTimer.timerType:
+      of OneShot:  spentTimer.timerType = Inactive
+      of Periodic:
+        spentTimer.expiration = execTime + spentTimer.period
+        spentTimer.sequenceTimer()
+      else: continue
 
 declareTask(bookEndTask):
   return
@@ -163,7 +161,6 @@ proc startScheduler*(requiredStack: uint = 1024): void =
   assertFatal(systemInit())
 
   # Create the timer task
-
   let timerTask = createTask(timerTask, 512)
 
   # Create the bookend.  This is only around to ensure that we stay
@@ -172,10 +169,14 @@ proc startScheduler*(requiredStack: uint = 1024): void =
 
   # Mark the scheduler as started to prevent any further task creation
   theScheduler.started = true
+  var lastTask: ptr TaskObj
 
   # Now, spawn all of the threads using the previous thread's stack
-  # space requirement (since when stacks are created, they're created
-  # to allow the current frame to keep growing)
+  # space requirement (When stacks are created, they're created to
+  # allow the current frame to keep growing) and schedule them in a
+  # linked ring formation
+
+  # TODO: Add other scheduling algos (prio queue, etc)
   for i in 0..<theScheduler.taskCount:
     var stackSize: uint
     if i == 0:
@@ -185,17 +186,37 @@ proc startScheduler*(requiredStack: uint = 1024): void =
 
     theScheduler.tasks[i].handle = theScheduler.tasks[i].task.coSpawn(stackSize)
 
+    if i == 0:
+      lastTask = theScheduler.tasks[i].addr
+      theScheduler.nextTask = lastTask
+    else:
+      lastTask.next = theScheduler.tasks[i].addr
+      lastTask = lastTask.next
+
+  # Complete the loop
+  lastTask.next = theScheduler.nextTask
+
+  assertFatal(not theScheduler.nextTask.handle.resumable(), "Unable to start first task")
 
   # Simple round robin scheduling
-  # TODO: Add other scheduling algos (prio queue, etc)
-  # TODO: add a way to mark tasks 'dead'
   while theScheduler.taskCount > 0:
-    for i in 0..<theScheduler.taskCount:
-      if theScheduler.tasks[i].handle.resumable():
-        discard theScheduler.tasks[i].handle.resume()
-        if timertask.resumable():
-          discard timerTask.resume()
+
+    discard theScheduler.nextTask.handle.resume()
+    # If the next task is not resumable, we should just remove it from
+    # the list and carry on
+    if not theScheduler.nextTask.next.handle.resumable():
+      # TODO: add dead tasks list
+      theScheduler.nextTask.next = theScheduler.nextTask.next.next
+      dec(theScheduler.taskCount)
+
+
+    # If there are any timers expired, go service them
+    if (theScheduler.nextTimer != nil) and (systemTime() >= theScheduler.nextTimer.expiration):
+      discard timerTask.resume()
+      assertFatal(not timertask.resumable(), "Timer task exited unexpectedly")
+
+    theScheduler.nextTask = theScheduler.nextTask.next
 
     systemSleep()
 
-  errFatal("no more tasks")
+  errFatal("Scheduler exited unexpectedly")
