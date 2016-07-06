@@ -63,10 +63,11 @@ LIBS = -lnosys
 INCLUDES += $(CPU_INCLUDES) $(BOARD_INCLUDES) $(LIB_INCLUDES) $(APP_INCLUDES) $(NIM_INCLUDES)
 INCLUDES += -Icpu/common
 
-CFLAGS = $(INCLUDES) $(CPU_DEFINES) $(BOARD_DEFINES) $(APP_DEFINES)                      \
-	$(CPU_FLAGS) -Os -Wall -Wno-pragmas -Wno-unused-but-set-variable -fno-common     \
-	-c -mthumb -ffunction-sections -fdata-sections -flto                             \
-	-mcpu=$(CPU_TYPE) -MD -std=gnu99
+CFLAGS = $(INCLUDES) $(CPU_DEFINES) $(BOARD_DEFINES) $(APP_DEFINES)	\
+	$(CPU_FLAGS) -Os -Wall -Wno-address -Wno-pragmas		\
+	-Wno-unused-but-set-variable -fno-common -c -mthumb		\
+	-ffunction-sections -fdata-sections -flto -mcpu=$(CPU_TYPE)	\
+	-MD -std=gnu99
 
 ASFLAGS   = -mcpu=$(CPU_TYPE) $(FPU) -g -Wa,--warn
 ARFLAGS   = rcs
@@ -102,6 +103,14 @@ LIB_CONFIGS = $(wildcard $(LIB_PATH)/*.mk)
 
 NIM_IMPORTS = --import:newlib
 
+NIMFLAGS = --compile_only
+NIMFLAGS += -d:StandaloneHeapSize=4
+NIMFLAGS += -d:release
+NIMFLAGS += -p=libs/narm_runtime
+NIMFLAGS += -p=libs/narmos $(NIM_IMPORTS)
+
+
+
 all: $(TARGET).bin
 
 libs.mk: Makefile
@@ -114,7 +123,7 @@ $(TARGET).bin: $(TARGET).elf
 
 nimcache:
 	@printf " Regenerating Nim cache\n"
-	$(Q)nim c --compile_only -d:release -p=libs/narm_runtime -p=libs/narmos $(NIM_IMPORTS) $(APP_PATH)/main.nim
+	$(Q)nim c $(NIMFLAGS) $(APP_PATH)/main.nim
 
 $(TARGET).elf: nimcache libs.mk $(APP_O_FILES) $(CPU_O_FILES) $(LIB_O_FILES)
 	@printf "  LD      $(subst $(shell pwd)/,,$(@))\n"
