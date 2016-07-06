@@ -73,7 +73,7 @@ proc taskSleep*(ticksToSleep: uint64) =
   while systemTime() < wakeTime:
     taskYield()
 
-proc createTask*(t: Task, stackSize: uint): TaskHandle =
+proc registerTask*(t: Task, stackSize: uint): TaskHandle =
   assertFatal(theScheduler.started)
   theScheduler.tasks[theScheduler.taskCount].task = t
   theScheduler.tasks[theScheduler.taskCount].stackSize = stackSize
@@ -163,11 +163,11 @@ proc startScheduler*(requiredStack: uint = 1024): void =
   assertFatal(systemInit())
 
   # Create the timer task
-  let timerTask = createTask(timerTask, 512)
+  let timerTask = registerTask(timerTask, 512)
 
   # Create the bookend.  This is only around to ensure that we stay
   # within our memory bounds and accurately track our stack usage
-  let bookEnd = createTask(bookEndTask, 0)
+  let bookEnd = registerTask(bookEndTask, 0)
 
   # Mark the scheduler as started to prevent any further task creation
   theScheduler.started = true

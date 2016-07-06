@@ -86,9 +86,9 @@ proc main() =
   discard startPeriodicTimer(OneSecondTick, 1000)
   discard startOneShotTimer(TenSecondNotification, 10 * 1000)
   discard startAbsoluteTimer(TwelveFifteen, 1215)
-  discard createTask(printout1, 256)
-  discard createTask(printout2, 256)
-  discard createTask(sleepyTask, 256)
+  discard registerTask(printout1, 256)
+  discard registerTask(printout2, 256)
+  discard registerTask(sleepyTask, 256)
   
   startScheduler()
 
